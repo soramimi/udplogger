@@ -20,7 +20,7 @@ UDP Logger provides a lightweight, real-time logging solution that uses UDP comm
 
 The project consists of two main components:
 
-### 1. Logger Library (`lib.pro`)
+### 1. Logger Library (`liblogger.pro`)
 A static library that provides UDP logging functionality:
 - `Logger` class for sending log messages
 - Cross-platform socket implementation
@@ -58,7 +58,7 @@ Example:
 1. **Build the Logger Library:**
    ```bash
    cd udplogger
-   qmake lib.pro
+   qmake liblogger.pro
    make
    ```
 
@@ -113,20 +113,6 @@ logger.open("192.168.1.100", 8080);  // Custom host and port
 logger.send("Remote logging message");
 ```
 
-### Running the LogViewer
-
-1. Start the LogViewer application:
-   ```bash
-   ./LogViewer/build/Qt_6_9_0-Debug/udprecv
-   ```
-
-2. The viewer will automatically start listening on port 1024
-
-3. Use the menu to:
-   - Send test messages
-   - Clear the log display
-   - Monitor incoming log messages in real-time
-
 ## Configuration
 
 ### Default Settings
@@ -146,7 +132,7 @@ static constexpr int PORT = 1024;  // Change to your preferred port
 ```
 udplogger/
 ├── README.md                 # This file
-├── lib.pro                   # Logger library project file
+├── liblogger.pro             # Logger library project file
 ├── main.cpp                  # Library test application
 ├── Makefile                  # Build configuration
 ├── include/

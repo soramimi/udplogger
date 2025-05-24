@@ -1,6 +1,6 @@
 
 TEMPLATE = app
-TARGET = udprecv
+TARGET = LogViewer
 INCLUDEPATH += .
 INCLUDEPATH += ../src
 INCLUDEPATH += ../include
