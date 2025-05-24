@@ -118,8 +118,7 @@ Timestamp getLocalTimeWithMicroseconds()
 
 	// マイクロ秒を計算（100ナノ秒単位 → マイクロ秒）
 	uint64_t totalMicroseconds = (static_cast<uint64_t>(ft.dwHighDateTime) << 32 | ft.dwLowDateTime) / 10;
-	uint64_t microsecond_part = totalMicroseconds % 1000000;
-	uint16_t microsecond = static_cast<uint16_t>(microsecond_part % 1000);
+	uint64_t microsecond = totalMicroseconds % 1000000;
 
 	Timestamp ts;
 	ts.year = st.wYear;

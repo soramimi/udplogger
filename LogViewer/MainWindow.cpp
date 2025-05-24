@@ -2,7 +2,6 @@
 #include "ui_MainWindow.h"
 #include "Logger.h"
 #include <future>
-#include <deque>
 #include <mutex>
 
 #ifdef _WIN32
@@ -15,6 +14,13 @@ typedef int ssize_t;
 #include <sys/ioctl.h>
 #define ioctlsocket ioctl
 #endif
+
+Logger logger;
+void customLogHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+{
+	std::string message = qFormatLogMessage(type, context, msg).toStdString();
+	logger.send(message);
+}
 
 struct MainWindow::Private {
 	std::future<int> thread;
@@ -33,14 +39,25 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(this, &MainWindow::logReady, this, &MainWindow::onLogReady);
 
 	startReceiveThread();
+
+	if (!logger.open()) {
+		qDebug() << "Failed to open socket";
+		return;
+	}
+	installCustomLogger();
 }
 
 MainWindow::~MainWindow()
 {
 	closesocket();
-	m->thread.get();
+	m->thread.get(); // wait for thread to finish
 	delete m;
 	delete ui;
+}
+
+void MainWindow::installCustomLogger()
+{
+	qInstallMessageHandler(customLogHandler);
 }
 
 void MainWindow::closesocket()
@@ -58,6 +75,7 @@ void MainWindow::closesocket()
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
+	logger.close();
 	QMainWindow::closeEvent(event);
 }
 
@@ -135,19 +153,18 @@ void MainWindow::onLogReady()
 	ui->tableView->add(std::move(items));
 }
 
-void MainWindow::on_action_send_test_message_triggered()
-{
-	Logger logger;
-	if (!logger.open()) {
-		qDebug() << "Failed to open socket";
-		return;
-	}
-	logger.send("This is test message!");
-	logger.close();
-}
-
 void MainWindow::on_action_clear_triggered()
 {
 	ui->tableView->clear();
 }
+
+void MainWindow::on_action_send_test_message_triggered()
+{
+#if 0
+	logger.send("This is a test message!");
+#else
+	qDebug() << "Test message from qDebug";
+#endif
+}
+
 

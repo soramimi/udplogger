@@ -23,6 +23,7 @@ private:
 	Ui::MainWindow *ui;
 	void startReceiveThread();
 	void closesocket();
+	void installCustomLogger();
 private slots:
 	void onLogReady();
 	void on_action_send_test_message_triggered();
