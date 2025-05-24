@@ -121,8 +121,10 @@ void MainWindow::startReceiveThread()
 			struct sockaddr_in client_addr;
 			socklen_t addr_len = sizeof(client_addr);
 			ssize_t n = recvfrom(m->sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&client_addr, &addr_len);
+			std::string from = inet_ntoa(client_addr.sin_addr);
 			if (n > 0) {
 				auto item = LogItem::parse(std::string_view(buffer, n));
+				item.from = QString::fromStdString(from);
 				{
 					std::lock_guard lock(m->mutex);
 					m->log_items.push_back(item);

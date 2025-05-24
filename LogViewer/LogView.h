@@ -9,9 +9,10 @@ typedef uint32_t pid_t;
 #endif
 
 struct LogItem {
-	pid_t pid = 0;
 	QDateTime ts;
 	int us = -1;
+	QString from;
+	pid_t pid = 0;
 	QString message;
 	LogItem() = default;
 	LogItem(QString const &message)

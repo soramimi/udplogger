@@ -109,9 +109,10 @@ public:
 		return (int)items_.size();
 	}
 	enum Column {
-		C_PID,
 		C_DATE,
 		C_TIME,
+		C_FROM,
+		C_PID,
 		C_MESSAGE,
 		_C_COUNT
 	};
@@ -124,9 +125,10 @@ public:
 		if (orientation == Qt::Horizontal) {
 			if (role == Qt::DisplayRole) {
 				switch (section) {
-				case C_PID:     return tr("PID");
 				case C_DATE:    return tr("Date");
 				case C_TIME:    return tr("Time");
+				case C_FROM:    return tr("From");
+				case C_PID:     return tr("PID");
 				case C_MESSAGE: return tr("Message");
 				}
 			}
@@ -137,9 +139,7 @@ public:
 	{
 		if (role == Qt::DisplayRole) {
 			auto const &t = item(index);
-			if (index.column() == C_PID) {
-				return QString::asprintf("%d", t.pid);
-			} else if (index.column() == C_DATE) {
+			if (index.column() == C_DATE) {
 				if (t.ts.date().isValid()) {
 					return QString::asprintf("%d-%02d-%02d", t.ts.date().year(), t.ts.date().month(), t.ts.date().day());
 				}
@@ -151,6 +151,10 @@ public:
 					}
 					return s;
 				}
+			} else if (index.column() == C_FROM) {
+				return t.from;
+			} else if (index.column() == C_PID) {
+					return QString::asprintf("%d", t.pid);
 			} else if (index.column() == C_MESSAGE) {
 				return t.message;
 			}
