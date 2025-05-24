@@ -13,6 +13,7 @@ typedef uint32_t pid_t;
 #include <sys/time.h>
 #include <arpa/inet.h>
 #include <sys/ioctl.h>
+#include <time.h>
 #endif
 
 struct Logger::Private {
