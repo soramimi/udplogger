@@ -1,5 +1,5 @@
 // String Formatter
-// Copyright (C) 2024 S.Fuchita (soramimi_jp)
+// Copyright (C) 2025 S.Fuchita (soramimi_jp)
 // This software is distributed under the MIT license.
 
 #ifndef STRFORMAT_H
@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 #include <string_view>
+#include <locale.h>
 
 #ifdef _MSC_VER
 #include <io.h>

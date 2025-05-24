@@ -4,6 +4,10 @@
 #include <QDateTime>
 #include <QTableView>
 
+#ifdef _WIN32
+typedef uint32_t pid_t;
+#endif
+
 struct LogItem {
 	pid_t pid = 0;
 	QDateTime ts;

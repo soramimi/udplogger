@@ -1,13 +1,17 @@
 
 #include <QApplication>
+#include "Logger.h"
 #include "MainWindow.h"
 
 int main(int argc, char **argv)
 {
+	Logger::initialize();
 	QApplication a(argc, argv);
 	qRegisterMetaType<LogItem>();
 	MainWindow w;
 	w.show();
-	return a.exec();
+	int r = a.exec();
+	Logger::cleanup();
+	return r;
 }
 

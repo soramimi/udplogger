@@ -1,5 +1,5 @@
 
-NAME := bin/liblogger.a
+NAME := lib/liblogger.a
 PROJDIR := .
 
 SRCS := src/Logger.cpp src/htmlencode.cpp

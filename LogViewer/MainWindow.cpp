@@ -1,12 +1,20 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
 #include "Logger.h"
-#include <arpa/inet.h>
 #include <future>
-#include <sys/ioctl.h>
-#include <unistd.h>
 #include <deque>
 #include <mutex>
+
+#ifdef _WIN32
+#include <winsock2.h>
+typedef int socklen_t;
+typedef int ssize_t;
+#else
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/ioctl.h>
+#define ioctlsocket ioctl
+#endif
 
 struct MainWindow::Private {
 	std::future<int> thread;
@@ -40,7 +48,11 @@ void MainWindow::closesocket()
 	int fd = -1;
 	std::swap(fd, m->sockfd);
 	if (fd != -1) {
+#ifdef _WIN32
+		::closesocket(fd);
+#else
 		::close(fd);
+#endif
 	}
 }
 
@@ -77,8 +89,12 @@ void MainWindow::startReceiveThread()
 
 		// ノンブロッキングモードに設定
 		{
+#ifdef _WIN32
+			u_long val = 1;
+#else
 			int val = 1;
-			ioctl(m->sockfd, FIONBIO, &val);
+#endif
+			ioctlsocket(m->sockfd, FIONBIO, &val);
 		}
 
 		// データ受信ループ
@@ -95,7 +111,11 @@ void MainWindow::startReceiveThread()
 				}
 				emit logReady();
 			} else {
+#ifdef _WIN32
+				Sleep(1);
+#else
 				usleep(1000);
+#endif
 			}
 		}
 

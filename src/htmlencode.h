@@ -2,6 +2,7 @@
 #ifndef __HTMLENCODE_H
 #define __HTMLENCODE_H
 
+#include <string>
 #include <string_view>
 
 std::string html_encode(char const *ptr, char const *end, bool utf8through = true);

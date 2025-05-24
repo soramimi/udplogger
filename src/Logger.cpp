@@ -1,12 +1,19 @@
 #include "Logger.h"
 #include "htmlencode.h"
 #include "strformat.h"
-#include <arpa/inet.h>
 #include <cstring>
-#include <sys/ioctl.h>
-#include <sys/time.h>
-#include <time.h>
+
+#ifdef _WIN32
+#include <winsock2.h>
+#include <Windows.h>
+#include <ws2tcpip.h>
+typedef uint32_t pid_t;
+#else
 #include <unistd.h>
+#include <sys/time.h>
+#include <arpa/inet.h>
+#include <sys/ioctl.h>
+#endif
 
 struct Logger::Private {
 	int sockfd = -1;
@@ -24,8 +31,32 @@ Logger::~Logger()
 	delete m;
 }
 
-bool Logger::open()
+void Logger::initialize()
 {
+#ifdef _WIN32
+	WSADATA wsaData;
+	WORD wVersionRequested;
+	wVersionRequested = MAKEWORD(2, 2); // Request version 2.2 for better compatibility
+	if (WSAStartup(wVersionRequested, &wsaData) == 0) {
+		atexit(cleanup);
+	}
+#endif
+}
+
+void Logger::cleanup()
+{
+#ifdef _WIN32
+	WSACleanup();
+#endif
+}
+
+
+bool Logger::open(char const *remote, int port)
+{
+	if (!remote) {
+		remote = "127.0.0.1";
+	}
+
 	// ソケットの作成
 	if ((m->sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		perror("socket creation failed");
@@ -35,8 +66,8 @@ bool Logger::open()
 	// サーバーアドレスの設定
 	memset(&m->server_addr, 0, sizeof(m->server_addr));
 	m->server_addr.sin_family = AF_INET;
-	m->server_addr.sin_port = htons(PORT);
-	inet_pton(AF_INET, "127.0.0.1", &m->server_addr.sin_addr);
+	m->server_addr.sin_port = htons(port);
+	inet_pton(AF_INET, remote, &m->server_addr.sin_addr);
 	return true;
 }
 
@@ -45,31 +76,91 @@ void Logger::close()
 	int fd = -1;
 	std::swap(fd, m->sockfd);
 	if (fd != -1) {
+#ifdef _WIN32
+		::closesocket(fd);
+#else
 		::close(fd);
+#endif
 	}
 }
 
-void Logger::send(std::string message)
-{
-	pid_t pid = getpid();
 
+struct Timestamp {
+	int year;
+	int month;
+	int day;
+	int hour;
+	int minute;
+	int second;
+	int usec;
+};
+
+Timestamp getLocalTimeWithMicroseconds()
+{
+#ifdef _WIN32
+	FILETIME ft;
+	ULARGE_INTEGER li;
+
+	// Windows 8 以降で高精度のシステム時刻を取得
+	GetSystemTimePreciseAsFileTime(&ft);
+
+	li.LowPart = ft.dwLowDateTime;
+	li.HighPart = ft.dwHighDateTime;
+
+	// UTC FILETIME（100ナノ秒単位） → ローカル FILETIME に変換
+	FILETIME localFt;
+	FileTimeToLocalFileTime(&ft, &localFt);
+
+	// ローカル FILETIME → SYSTEMTIME に変換
+	SYSTEMTIME st;
+	FileTimeToSystemTime(&localFt, &st);
+
+	// マイクロ秒を計算（100ナノ秒単位 → マイクロ秒）
+	uint64_t totalMicroseconds = (static_cast<uint64_t>(ft.dwHighDateTime) << 32 | ft.dwLowDateTime) / 10;
+	uint64_t microsecond_part = totalMicroseconds % 1000000;
+	uint16_t microsecond = static_cast<uint16_t>(microsecond_part % 1000);
+
+	Timestamp ts;
+	ts.year = st.wYear;
+	ts.month = st.wMonth;
+	ts.day = st.wDay;
+	ts.hour = st.wHour;
+	ts.minute = st.wMinute;
+	ts.second = st.wSecond;
+	ts.usec = microsecond;
+	return ts;
+#else
 	struct timeval tv;
 	gettimeofday(&tv, nullptr);
 	time_t now = tv.tv_sec;
 	struct tm *lt = localtime(&now);
-	int date_year = lt->tm_year + 1900;
-	int date_month = lt->tm_mon + 1;
-	int date_day = lt->tm_mday;
-	int time_hour = lt->tm_hour;
-	int time_minute = lt->tm_min;
-	int time_second = lt->tm_sec;
-	int usec = tv.tv_usec;
+	Timestamp ts;
+	ts.year = lt->tm_year + 1900;
+	ts.month = lt->tm_mon + 1;
+	ts.day = lt->tm_mday;
+	ts.hour = lt->tm_hour;
+	ts.minute = lt->tm_min;
+	ts.second = lt->tm_sec;
+	ts.usec = tv.tv_usec;
+	return ts;
+#endif
+}
+
+
+void Logger::send(std::string message)
+{
+#ifdef _WIN32
+	pid_t pid = GetCurrentProcessId();
+#else
+	pid_t pid = getpid();
+#endif
+	Timestamp ts = getLocalTimeWithMicroseconds();
 
 	message = strf("<pid>%d<d>%d-%02d-%02d<t>%02d:%02d:%02d<us>%06d<m>%s")
 			(pid)
-			(date_year)(date_month)(date_day)
-			(time_hour)(time_minute)(time_second)
-			(usec)(html_encode(message));
+			(ts.year)(ts.month)(ts.day)
+			(ts.hour)(ts.minute)(ts.second)
+			(ts.usec)(html_encode(message));
 
 	sendto(m->sockfd, message.c_str(), message.size(), 0, (const struct sockaddr *)&m->server_addr, sizeof(m->server_addr));
 }

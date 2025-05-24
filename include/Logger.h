@@ -12,9 +12,11 @@ private:
 public:
 	Logger();
 	~Logger();
-	bool open();
+	bool open(const char *remote = nullptr, int port = 1024);
 	void close();
 	void send(std::string message);
+	static void initialize();
+	static void cleanup();
 };
 
 #endif // LOGGER_H

@@ -6,7 +6,8 @@ INCLUDEPATH += ../src
 INCLUDEPATH += ../include
 QT += core gui widgets
 
-LIBS += $$PWD/../bin/liblogger.a
+!win32:LIBS += $$PWD/../lib/liblogger.a
+win32:LIBS += $$PWD/../lib/logger.lib -lws2_32
 
 HEADERS += \
 	../src/htmlencode.h \
